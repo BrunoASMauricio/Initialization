@@ -48,4 +48,12 @@ OPAQUE_MEMORY OrganizeInitInformation(void);
 
 void ReleaseInitInfo(void);
 
+void MyConstructor1(void);
+void MyConstructor2(void);
+void MyConstructor3(void);
+
+#define Constructor1ID MyConstructor1
+#define Constructor2ID MyConstructor2
+#define Constructor3ID MyConstructor3
+
 #endif
