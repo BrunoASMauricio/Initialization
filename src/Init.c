@@ -2,7 +2,12 @@
 
 LIST* InitInfoList = NULL;
 
-static BOOLEAN HandlerDependsOn(INIT_INFORMATION* InitInfo, CONSTRUCTOR_HANDLER Dependency);
+static BOOLEAN HandlerDependsOn(INIT_INFORMATION* InitInfo,
+                                CONSTRUCTOR_HANDLER Dependency);
+
+static OPAQUE_MEMORY OrganizeInitInformation(void);
+
+static void ReleaseInitInfo(void);
 
 
 void RegisterConstructor(const char Location[], CONSTRUCTOR_HANDLER Handler, OPAQUE_MEMORY Dependencies){
@@ -12,6 +17,7 @@ void RegisterConstructor(const char Location[], CONSTRUCTOR_HANDLER Handler, OPA
         InitInfoList = AllocateList();
     }
 
+    // Info allocation
     NewEntry->Handler  = Handler;
     NewEntry->Location = Malloc(strlen(Location) + 1);
     Memcpy(NewEntry->Location, Location, strlen(Location) + 1);
@@ -26,20 +32,23 @@ void RunInitializationFunctions(void) {
     uint64_t HandlerAmmount;
     CONSTRUCTOR_HANDLER* HandlerArray;
 
+    // Organize handlers
     OPAQUE_MEMORY SerializedInitHandlers = OrganizeInitInformation();
     HandlerArray = SerializedInitHandlers.Data;
 
+    // Run all handlers
     HandlerAmmount = SerializedInitHandlers.Size / sizeof(CONSTRUCTOR_HANDLER);
     for(uint64_t HandlerInd = 0; HandlerInd != HandlerAmmount; HandlerInd++) {
         HandlerArray[HandlerInd]();
     }
 
+    // Release memory
     ClearOpaqueMemory(&SerializedInitHandlers);
 
     ReleaseInitInfo();
 }
 
-OPAQUE_MEMORY OrganizeInitInformation(void) {
+static OPAQUE_MEMORY OrganizeInitInformation(void) {
     OPAQUE_MEMORY SerializedInitHandlers;
     CONSTRUCTOR_HANDLER* HandlerArray;
     INIT_INFORMATION* InitInfo;
@@ -65,7 +74,7 @@ OPAQUE_MEMORY OrganizeInitInformation(void) {
 
                 printf("[%ld]: %s\n", InsertedAmmount, InitInfo->Location);
 
-                // Instead of removing from list we just "disable" it for now
+                // Instead of removing from list we just "disable" it
                 Free(InitInfo->Location);
                 FreeOpaqueMemory(InitInfo->Dependencies);
                 InitInfo->Location = NULL;
@@ -105,7 +114,7 @@ static BOOLEAN HandlerDependsOn(INIT_INFORMATION* InitInfo, CONSTRUCTOR_HANDLER 
     return FALSE;
 }
 
-void ReleaseInitInfo(void) {
+static void ReleaseInitInfo(void) {
     INIT_INFORMATION* InitInfo;
 
     ITERATE_PRIMITIVE_DATA_TYPE(InitInfoList, pointer, InitInfo) {

@@ -8,24 +8,20 @@
 
 #define BEFORE_MAIN __attribute__ ((constructor))
 
-// Handlers' memory location is its' own identifier (memory is shared so addresses are unique)
 typedef void (*CONSTRUCTOR_HANDLER)(void);
 
 TYPE_STRUCT(INIT_INFORMATION) {
     CONSTRUCTOR_HANDLER Handler;
     OPAQUE_MEMORY* Dependencies;
+    // how many dependencies are still unfullfilled
     size_t PendingDependencies;
-    char* Location; // __func__  __FILE__ __LINE__
+    // debug purposes
+    char* Location;
 };
 
-/** Register a constructor, its' ID and dependent IDs
-  * 
-  */
-// It is assumed that constructors run in a single thread (need to validate this assumption for all cases but how)
+/* Register a constructor, its' ID and dependencies  */
 void RegisterConstructor(const char Location[], CONSTRUCTOR_HANDLER Handler,
                          OPAQUE_MEMORY Dependencies);
-
-// void RegisterConstructor(CONSTRUCTOR_HANDLER Handler);
 
 #define REGISTER_DEPENDENT_CONSTRUCTOR(Handler, ...)                              \
 static void BEFORE_MAIN GLUE1(RegisterConstructor, __COUNTER__)(void) {           \
@@ -43,10 +39,6 @@ static void BEFORE_MAIN GLUE1(RegisterConstructor, __COUNTER__)(void) { \
 }
 
 void RunInitializationFunctions(void);
-
-OPAQUE_MEMORY OrganizeInitInformation(void);
-
-void ReleaseInitInfo(void);
 
 void MyConstructor1(void);
 void MyConstructor2(void);
